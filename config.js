@@ -1,5 +1,5 @@
 // load .env variables into process.env
-require('dotenv').config();
+require('dotenv').config({path: process.env.CIRCLECI ? './.env.test' : './.env'});
 
 const config = {
   dev: (process.env.OBEDBOT_DEV === 'true') || false,
@@ -16,11 +16,11 @@ const config = {
     click: process.env.OBEDBOT_CLICK || '',
   },
   orderRegex: {
-    presto: /presto[1-7](p[1-2])?/,
-    pizza: /pizza[0-9]{1,2}(v((33)|(40)|(50)))?/,
-    veglife: /veg[1-4]\+?[ps]?/,
-    hamka: /ham[1-5].*/,
-    click: /click[1-6](p[1-3])?/,
+    presto: /^presto[1-7](p[1-2])?\b/,
+    pizza: /^pizza[0-9]{1,2}(v((33)|(40)|(50)))?\b/,
+    veglife: /^veg[1-4]\+?[ps]?\b/,
+    hamka: /^ham[1-5].*/,
+    click: /click[1-6](p[1-3])?\b/,
     shop: /^((nakup)|(nákup)|(nakúp)).*/,
   },
   orderReaction: 'taco',

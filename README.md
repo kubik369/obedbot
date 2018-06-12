@@ -17,6 +17,7 @@ git clone https://github.com/vacuumlabs/obedbot.git && cd obedbot
 cp obedbot-template.db obedbot.db
 cp .env.template .env
 yarn
+yarn test
 yarn start
 ```
 
@@ -26,5 +27,6 @@ git clone https://github.com/vacuumlabs/obedbot.git && cd obedbot
 cp obedbot-template.db obedbot.db
 cp .env.template .env
 yarn
+yarn test
 yarn run dev
 ```
