@@ -1,5 +1,5 @@
 // load .env variables into process.env
-require('dotenv').config();
+require('dotenv').config({path: process.env.CIRCLECI ? './.env.test' : './.env'});
 
 const config = {
   dev: (process.env.OBEDBOT_DEV === 'true') || false,
