@@ -103,6 +103,19 @@ function confirmOrder(ts) {
   );
 }
 
+function removeConfirmation(ts) {
+  slack.web.reactions.remove(
+    config.orderReaction,
+    {channel: config.slack.lunchChannelId, timestamp: ts}
+  );
+}
+
+/**
+ * @param {string} key - order (parent) timestamp
+ * @param {string} value - unknown order message timestamp
+ */
+const unknownOrderMessages = {};
+
 function unknownOrder(ts) {
   slack.web.reactions.add(
     config.orderUnknownReaction,
@@ -112,14 +125,22 @@ function unknownOrder(ts) {
     config.slack.lunchChannelId,
     config.messages.unknownOrder,
     {as_user: true, thread_ts: ts}
-  );
+  ).then((resp) => {
+    const {ts, thread_ts} = resp.message;
+    unknownOrderMessages[thread_ts] = ts;
+  });
 }
 
-function removeConfirmation(ts) {
+function removeUnknownOrder(ts) {
   slack.web.reactions.remove(
-    config.orderReaction,
+    config.orderUnknownReaction,
     {channel: config.slack.lunchChannelId, timestamp: ts}
   );
+  const messageTs = unknownOrderMessages[ts];
+  if (messageTs) {
+    slack.web.chat.delete(messageTs, config.slack.lunchChannelId);
+    delete unknownOrderMessages[ts];
+  }
 }
 
 /**
@@ -206,10 +227,16 @@ export async function messageReceived(msg) {
       message: {
         text: messageText,
         ts: timestamp,
+        subtype,
         user,
       },
       channel,
     } = msg;
+
+    if (subtype === 'tombstone') { // message is deleted
+      removeUnknownOrder(timestamp);
+      return;
+    }
 
     if (user === config.slack.botId) {
       logger.devLog('Message was from obedbot');
@@ -225,11 +252,13 @@ export async function messageReceived(msg) {
         if (isChannelPublic(channel)) {
           if (isObedbotMentioned(messageText) && isOrder(messageText)) {
             if (!alreadyReacted(reactions)) {
+              removeUnknownOrder(timestamp);
               confirmOrder(timestamp);
             }
           } else if (isObedbotMentioned(previousMessageText) && isOrder(previousMessageText)) {
             if (alreadyReacted(reactions)) {
               removeConfirmation(timestamp);
+              unknownOrder(timestamp);
             }
           }
         } else if (channel.charAt(0) === 'D') {
